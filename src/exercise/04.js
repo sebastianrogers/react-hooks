@@ -35,43 +35,37 @@ function Board({squares, onClick}) {
 }
 
 function Game() {
-  const [currentSquares, setCurrentSquares] = useLocalStorageState("currentSquares", Array(9).fill(null))
-  const [moves, setMoves] = useLocalStorageState("moves", [])
+  const [history, setHistory] = useLocalStorageState("history", [Array(9).fill(null)])
+  const [currentStep, setCurrentStep] = useLocalStorageState("currentStep", 0)
+  const currentSquares = history[currentStep]
 
   const nextValue = (calculateNextValue(currentSquares))
   const winner = (calculateWinner(currentSquares))
   const status = (calculateStatus(winner, currentSquares, nextValue))
 
+  const moves = history.map((step, index) => { return <li onClick={() => setCurrentStep(index)}></li> })
+
   function selectSquare(square) {
-    // 🐨 first, if there's already winner or there's already a value at the
-    // given square index (like someone clicked a square that's already been
-    // clicked), then return early so we don't make any state changes
+    if (currentStep < history.length - 1) {
+      return
+    }
     if (winner) {
       return
     }
     if (currentSquares[square]) {
       return
     }
-    //
-    // 🦉 It's typically a bad idea to mutate or directly change state in React.
-    // Doing so can lead to subtle bugs that can easily slip into production.
-    //
-    // 🐨 make a copy of the squares array 
-    // 💰 `[...squares]` will do it!)
+
     const squaresCopy = [...currentSquares]
-    //
-    // 🐨 set the value of the square that was selected
-    // 💰 `squaresCopy[square] = nextValue`
     squaresCopy[square] = nextValue
-    //
-    // 🐨 set the squares to your copy
-    setCurrentSquares(squaresCopy)
+
+    setHistory([...history, squaresCopy])
+    setCurrentStep(currentStep+1)
   }
 
   function restart() {
-    // 🐨 reset the squares
-    // 💰 `Array(9).fill(null)` will do it!
-    setCurrentSquares(Array(9).fill(null))
+    setHistory([Array(9).fill(null)])
+    setCurrentStep(0)
   }
 
   return (
