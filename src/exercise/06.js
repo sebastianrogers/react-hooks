@@ -1,5 +1,6 @@
 // useEffect: HTTP requests
-// http://localhost:3000/isolated/exercise/06.js
+// 💯 create an ErrorBoundary component
+// http://localhost:3000/isolated/final/06.extra-4.js
 
 import React from 'react'
 import {
@@ -8,37 +9,53 @@ import {
   PokemonForm,
   PokemonDataView,
 } from '../pokemon'
+import {ErrorBoundary} from 'react-error-boundary'
+
 
 function PokemonInfo({pokemonName}) {
-  const [{status, pokemon, error}, setState] = React.useState({status: "idle", pokemon: null, error: null})
+  const [state, setState] = React.useState({
+    status: 'idle',
+    pokemon: null,
+    error: null,
+  })
+  const {status, pokemon, error} = state
 
   React.useEffect(() => {
     if (!pokemonName) {
       return
     }
-    setState({status: "pending"})
-    fetchPokemon(pokemonName)
-      .then(pokemon => {
-        setState({status: "resolved", pokemon: pokemon})
+    setState({status: 'pending'})
+    fetchPokemon(pokemonName).then(
+      pokemon => {
+        setState({status: 'resolved', pokemon})
       },
       error => {
-        setState({status: "rejected", error: error})
-      })
+        setState({status: 'rejected', error})
+      },
+    )
   }, [pokemonName])
 
-  // eslint-disable-next-line default-case
-  switch (status) {
-    case "idle":
-      return 'Submit a pokemon'
-    case "pending":
-      return <PokemonInfoFallback name={pokemonName} />
-    case "rejected":
-      return <div role="alert">
-      There was an error: <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
-    </div>
-    case "resolved":
-      return <PokemonDataView pokemon={pokemon} />
+  if (status === 'idle') {
+    return 'Submit a pokemon'
+  } else if (status === 'pending') {
+    return <PokemonInfoFallback name={pokemonName} />
+  } else if (status === 'rejected') {
+    // this will be handled by an error boundary
+    throw error
+  } else if (status === 'resolved') {
+    return <PokemonDataView pokemon={pokemon} />
   }
+
+  throw new Error('This should be impossible')
+}
+
+function ErrorFallback({error}) {
+  return (
+    <div role="alert">
+      There was an error:{' '}
+      <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+    </div>
+  )
 }
 
 function App() {
@@ -53,7 +70,9 @@ function App() {
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
       <div className="pokemon-info">
-        <PokemonInfo pokemonName={pokemonName} />
+        <ErrorBoundary FallbackComponent={ErrorFallback} key={pokemonName}>
+          <PokemonInfo pokemonName={pokemonName} />
+        </ErrorBoundary>
       </div>
     </div>
   )
